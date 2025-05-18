@@ -21,22 +21,30 @@ router.post('/', async (req, res) => {
 // Get all tasks (optional filters: project_id, freelancer_id)
 router.get('/', async (req, res) => {
   const { project_id, freelancer_id } = req.query;
-  let sql = 'SELECT * FROM Tasks';
+  let sql = `
+   SELECT 
+  Tasks.*, 
+  Projects.description AS project_description, 
+  Projects.project_id
+FROM Tasks
+LEFT JOIN Projects ON Tasks.project_id = Projects.project_id
+  `;
   const params = [];
 
   if (project_id && freelancer_id) {
-    sql += ' WHERE project_id = ? AND freelancer_id = ?';
+    sql += ' WHERE Tasks.project_id = ? AND Tasks.freelancer_id = ?';
     params.push(project_id, freelancer_id);
   } else if (project_id) {
-    sql += ' WHERE project_id = ?';
+    sql += ' WHERE Tasks.project_id = ?';
     params.push(project_id);
   } else if (freelancer_id) {
-    sql += ' WHERE freelancer_id = ?';
+    sql += ' WHERE Tasks.freelancer_id = ?';
     params.push(freelancer_id);
   }
 
   try {
     const [rows] = await db.execute(sql, params);
+    // console.log('API /tasks rows:', rows); // <-- Add this line
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
